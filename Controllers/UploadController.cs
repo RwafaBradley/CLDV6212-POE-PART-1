@@ -27,7 +27,7 @@ namespace ABCRetailers.Controllers
         {
             var model = new FileUploadModel();
 
-            // Populate orders and customers dropdowns
+            
             await PopulateDropdowns(model);
 
             return View(model);
@@ -50,33 +50,46 @@ namespace ABCRetailers.Controllers
                 return View(model);
             }
 
+            if (model?.ProofOfPayment == null || model.ProofOfPayment.Length == 0)
+            {
+                ModelState.AddModelError("ProofOfPayment", "Please select a file to upload.");
+                await PopulateDropdowns(model);
+                return View(model);
+            }
+
             try
             {
-                if (model?.ProofOfPayment == null || model.ProofOfPayment.Length == 0)
-                {
-                    ModelState.AddModelError("ProofOfPayment", "Please select a file to upload.");
-                    await PopulateDropdowns(model);
-                    return View(model);
-                }
-
-                // Upload to blob storage
+                
                 var fileUrl = await _storageService.UploadFileAsync(model.ProofOfPayment, "proof-of-payments");
 
-                // Optional: Upload to file share
+               
                 try
                 {
-                    await _storageService.UploadToFileShareAsync(model.ProofOfPayment, "contracts");
-                }
-                catch (NotImplementedException)
-                {
-                    _logger.LogDebug("UploadToFileShareAsync not implemented; skipping file-share upload.");
+                    var shareServiceClient = _storageService.GetType()
+                        .GetProperty("_shareServiceClient", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        ?.GetValue(_storageService) as Azure.Storage.Files.Shares.ShareServiceClient;
+
+                    if (shareServiceClient != null)
+                    {
+                        var shareClient = shareServiceClient.GetShareClient("contracts");
+                        await shareClient.CreateIfNotExistsAsync();
+
+                        var paymentsDir = shareClient.GetDirectoryClient("payments");
+                        await paymentsDir.CreateIfNotExistsAsync();
+
+                        var fileClient = paymentsDir.GetFileClient($"{DateTime.Now:yyyyMMdd_HHmmss}_{model.ProofOfPayment.FileName}");
+                        using var stream = model.ProofOfPayment.OpenReadStream();
+                        await fileClient.CreateAsync(stream.Length);
+                        stream.Position = 0; // reset stream
+                        await fileClient.UploadAsync(stream);
+                    }
                 }
                 catch (Exception fsEx)
                 {
                     _logger.LogWarning(fsEx, "File-share upload failed (non-fatal): {Message}", fsEx.Message);
                 }
 
-                // ✅ Update order status to Completed
+               
                 var order = await _storageService.GetEntityAsync<Order>(OrderPartition, model.OrderId);
                 if (order != null)
                 {

@@ -59,35 +59,11 @@ namespace ABCRetailers.Controllers
 
             try
             {
-                
-                var fileUrl = await _storageService.UploadFileAsync(model.ProofOfPayment, "proof-of-payments");
-
                
-                try
-                {
-                    var shareServiceClient = _storageService.GetType()
-                        .GetProperty("_shareServiceClient", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                        ?.GetValue(_storageService) as Azure.Storage.Files.Shares.ShareServiceClient;
+                var blobFileName = await _storageService.UploadFileAsync(model.ProofOfPayment, "proof-of-payments");
 
-                    if (shareServiceClient != null)
-                    {
-                        var shareClient = shareServiceClient.GetShareClient("contracts");
-                        await shareClient.CreateIfNotExistsAsync();
-
-                        var paymentsDir = shareClient.GetDirectoryClient("payments");
-                        await paymentsDir.CreateIfNotExistsAsync();
-
-                        var fileClient = paymentsDir.GetFileClient($"{DateTime.Now:yyyyMMdd_HHmmss}_{model.ProofOfPayment.FileName}");
-                        using var stream = model.ProofOfPayment.OpenReadStream();
-                        await fileClient.CreateAsync(stream.Length);
-                        stream.Position = 0; // reset stream
-                        await fileClient.UploadAsync(stream);
-                    }
-                }
-                catch (Exception fsEx)
-                {
-                    _logger.LogWarning(fsEx, "File-share upload failed (non-fatal): {Message}", fsEx.Message);
-                }
+                
+                var fileShareFileName = await _storageService.UploadToFileShareAsync(model.ProofOfPayment, "contracts", "payments");
 
                
                 var order = await _storageService.GetEntityAsync<Order>(OrderPartition, model.OrderId);
@@ -97,7 +73,7 @@ namespace ABCRetailers.Controllers
                     await _storageService.UpdateEntityAsync(order);
                 }
 
-                TempData["Success"] = $"File uploaded successfully! File: {fileUrl}";
+                TempData["Success"] = $"File uploaded successfully! Blob: {blobFileName}, FileShare: {fileShareFileName}";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -108,7 +84,6 @@ namespace ABCRetailers.Controllers
                 return View(model);
             }
         }
-
         #region Helpers
 
         private async Task PopulateDropdowns(FileUploadModel model)

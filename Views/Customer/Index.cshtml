@@ -1,0 +1,37 @@
+﻿@model IEnumerable<ABCRetailers.Models.Customer>
+@{
+    ViewData["Title"] = "Customers";
+}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Customers</h2>
+    <a class="btn btn-primary" href="@Url.Action("Create")">Add New Customer</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Shipping Address</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@($"{c.Name} {c.Surname}")</td>
+                <td>@c.Username</td>
+                <td>@c.EmailAddress</td>
+                <td>@c.ShippingAddress</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-secondary" href="@Url.Action("Edit", new { id = c.RowKey })">Edit</a>
+                    <form method="post" asp-action="Delete" asp-route-id="@c.RowKey" style="display:inline" onsubmit="return confirm('Delete this customer?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

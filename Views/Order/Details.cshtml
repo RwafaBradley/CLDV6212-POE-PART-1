@@ -1,0 +1,18 @@
+﻿@model ABCRetailers.Models.Order
+@{
+    ViewData["Title"] = "Order Details";
+}
+<h2>Order Details</h2>
+
+<div class="card">
+    <div class="card-body">
+        <p><strong>Order ID:</strong> @Model.Id</p>
+        <p><strong>Customer:</strong> @Model.Username</p>
+        <p><strong>Product:</strong> @Model.ProductName</p>
+        <p><strong>Quantity:</strong> @Model.Quantity</p>
+        <p><strong>Unit Price:</strong> @Model.UnitPrice.ToString("C")</p>
+        <p><strong>Total Price:</strong> @Model.TotalPrice.ToString("C")</p>
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Order Date:</strong> @Model.OrderDate.ToString("g")</p>
+    </div>
+</div>

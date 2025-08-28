@@ -1,0 +1,44 @@
+﻿@model IEnumerable<ABCRetailers.Models.Order>
+@{
+    ViewData["Title"] = "Orders";
+}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Orders</h2>
+    <a class="btn btn-primary" href="@Url.Action("Create")">Add Order</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var o in Model)
+        {
+            <tr>
+                <td>@o.Id</td>
+                <td>@o.Username</td>
+                <td>@o.ProductName</td>
+                <td>@o.Quantity</td>
+                <td>@o.TotalPrice.ToString("C")</td>
+                <td>
+                    <span class="badge bg-info text-dark">@o.Status</span>
+                </td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-secondary" href="@Url.Action("Details", new { id = o.RowKey })">Details</a>
+                    <a class="btn btn-sm btn-secondary" href="@Url.Action("Edit", new { id = o.RowKey })">Edit</a>
+                    <form method="post" asp-action="Delete" asp-route-id="@o.RowKey" style="display:inline" onsubmit="return confirm('Delete this order?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

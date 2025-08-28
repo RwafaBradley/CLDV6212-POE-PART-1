@@ -1,0 +1,135 @@
+﻿@model ABCRetailers.Models.ViewModels.OrderCreateViewModel
+@{
+    ViewData["Title"] = "Create Order";
+}
+
+<h2>Create Order</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post" id="orderForm">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            <input type="hidden" asp-for="Status" value="Submitted" />
+
+            <div class="mb-3">
+                <label asp-for="CustomerId" class="form-label"></label>
+                <select asp-for="CustomerId" class="form-select">
+                    <option value="">-- select customer --</option>
+                    @foreach (var c in Model.Customers)
+                    {
+                        <option value="@c.RowKey">@($"{c.Name} {c.Surname} ({c.Username})")</option>
+                    }
+                </select>
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ProductId" class="form-label"></label>
+                <select asp-for="ProductId" class="form-select" id="productSelect">
+                    <option value="">-- select product --</option>
+                    @foreach (var p in Model.Products)
+                    {
+                        <option value="@p.RowKey" data-price="@p.Price" data-stock="@p.StockAvailable">@p.ProductName</option>
+                    }
+                </select>
+                <span asp-validation-for="ProductId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Quantity" class="form-label"></label>
+                <input asp-for="Quantity" class="form-control" id="quantityInput" min="1" value="1" />
+                <span asp-validation-for="Quantity" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label>Unit Price</label>
+                <input id="unitPrice" class="form-control" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label>Total Price</label>
+                <input id="totalPrice" class="form-control" readonly />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Order</button>
+            <a class="btn btn-secondary" href="@Url.Action("Index")">Cancel</a>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Order Summary</h5>
+                <p id="summaryProduct">Select a product</p>
+                <p>Available stock: <span id="summaryStock">-</span></p>
+                <p>Unit price: <span id="summaryUnit">-</span></p>
+                <p>Total: <span id="summaryTotal">-</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const productSelect = document.getElementById("productSelect");
+        const quantityInput = document.getElementById("quantityInput");
+        const unitPrice = document.getElementById("unitPrice");
+        const totalPrice = document.getElementById("totalPrice");
+        const summaryProduct = document.getElementById("summaryProduct");
+        const summaryStock = document.getElementById("summaryStock");
+        const summaryUnit = document.getElementById("summaryUnit");
+        const summaryTotal = document.getElementById("summaryTotal");
+
+        async function updatePriceFromServer(productId) {
+            if (!productId) {
+                unitPrice.value = "";
+                totalPrice.value = "";
+                summaryProduct.innerText = "Select a product";
+                summaryStock.innerText = "-";
+                summaryUnit.innerText = "-";
+                summaryTotal.innerText = "-";
+                return;
+            }
+
+            try {
+                const resp = await fetch(`@Url.Action("GetProductPrice", "Order")?productId=${encodeURIComponent(productId)}`);
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    alert(err.error || "Could not fetch product info.");
+                    return;
+                }
+                const data = await resp.json();
+                unitPrice.value = parseFloat(data.price).toFixed(2);
+                const qty = parseInt(quantityInput.value || "1", 10);
+                totalPrice.value = (data.price * qty).toFixed(2);
+
+                summaryProduct.innerText = data.productName;
+                summaryStock.innerText = data.stock;
+                summaryUnit.innerText = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(data.price);
+                summaryTotal.innerText = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(data.price * qty);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        productSelect.addEventListener("change", async (e) => {
+            await updatePriceFromServer(e.target.value);
+        });
+
+        quantityInput.addEventListener("input", async () => {
+            const productId = productSelect.value;
+            if (productId && unitPrice.value) {
+                const qty = parseInt(quantityInput.value || "1", 10);
+                totalPrice.value = (parseFloat(unitPrice.value) * qty).toFixed(2);
+                summaryTotal.innerText = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(parseFloat(unitPrice.value) * qty);
+            }
+        });
+
+       
+        if (productSelect.value) {
+            updatePriceFromServer(productSelect.value);
+        }
+    </script>
+}

@@ -1,0 +1,36 @@
+﻿@model ABCRetailers.Models.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+<h1>Welcome to ABC Retailers</h1>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5>Featured Products</h5>
+                <div class="row">
+                    @foreach (var p in Model.FeaturedProducts.Take(5))
+                    {
+                        <div class="col-md-4 text-center mb-3">
+                            <img src="@p.ImageUrl" alt="@p.ProductName" class="img-fluid" style="max-height:120px;" />
+                            <div>@p.ProductName</div>
+                            <div class="text-muted">@p.Price.ToString("C")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Statistics</h5>
+                <p>Customers: <strong>@Model.CustomerCount</strong></p>
+                <p>Products: <strong>@Model.ProductCount</strong></p>
+                <p>Orders: <strong>@Model.OrderCount</strong></p>
+            </div>
+        </div>
+    </div>
+</div>

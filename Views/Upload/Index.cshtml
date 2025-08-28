@@ -1,0 +1,37 @@
+﻿@model ABCRetailers.Models.FileUploadModel
+@{
+    ViewData["Title"] = "Upload Proof of Payment";
+}
+
+<h2>Upload Proof of Payment</h2>
+
+<form asp-action="Index" enctype="multipart/form-data" method="post">
+    <div class="mb-3">
+        <label asp-for="ProofOfPayment" class="form-label"></label>
+        <input asp-for="ProofOfPayment" class="form-control" type="file" />
+        <span asp-validation-for="ProofOfPayment" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="OrderId" class="form-label"></label>
+        <select asp-for="OrderId" class="form-select" asp-items="@(new SelectList(Model.Orders, "RowKey", "ProductName"))">
+            <option value="">-- Select Order --</option>
+        </select>
+        <span asp-validation-for="OrderId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CustomerName" class="form-label"></label>
+        <select asp-for="CustomerName" class="form-select" asp-items="@(new SelectList(Model.Customers))">
+            <option value="">-- Select Customer --</option>
+        </select>
+        <span asp-validation-for="CustomerName" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary">Upload</button>
+    <a class="btn btn-secondary" href="@Url.Action("Index", "Home")">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
